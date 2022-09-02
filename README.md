@@ -1,5 +1,3 @@
-# !!!!!!!!!!!!!!!!!!!!! DO NOT MAKE PUBLIC!!! !!!!!!!!!!!!!!!!!!!!!
-
 # OrtusTFT
 A simple, digital, forecast that uses the Adafruit 320x240 TFT hat for the Raspberry Pi.
 
