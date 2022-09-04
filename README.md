@@ -15,6 +15,23 @@ A simple, digital, forecast that uses the Adafruit 320x240 TFT hat for the Raspb
   *	Chance of Ice/Snow
 * About me page with some basic info
 
+## Live Demo
+If you would like to try OrtusTFT out before installation and have a computer, you're in luck!
+
+To get started, please install the following on your PC:
+* Pygame 1.9.6 ```pip3 install pygame==1.9.6```
+* Python 3.7.3
+
+Once you have those installed, head over to the OrtusTFT Github page and download the source code for the latest release onto your computer. (It should be a zip file)
+
+Extract the zip file and run the following command in the root folder of OrtusTFT:
+
+```python3 main.py --demo```
+
+*Note: Root access isn't necessary here because we aren't controlling any physical hardware*
+
+Enjoy!
+
 ## Prerequisites
 * Raspberry Pi - I'm not 100% sure if anything newer than a 3B will work. If it does/doesn't work, please leave a "documentation" issue to let me know.
 * At the moment, OrtusTFT only supports Adafruit's 320x240 Resistive displays. (Size does not matter) If you try to use anything else, OrtusTFT will not function properly.
@@ -68,7 +85,7 @@ cd OrtusTFT
 ## First Time Setup
 It was very difficult to get the TFT working so I had to create a few workarounds. Please run the following command to begin:
 ```
-sudo python3 configure.py
+sudo python3 main.py --setup
 ```
 
 For some technical reasons, root access is required in order to control the TFT. (You are always welcome to read through the source code. The script is only about 200 or so lines)
