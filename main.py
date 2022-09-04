@@ -5,6 +5,7 @@ from sys import argv
 from OrtusTFT import configure, interface, weather
 from OrtusTFT.screens import home, statistics, about, wip, sleep_screen
 
+# Set default values
 demo = False
 logging_level = logging.INFO
 
