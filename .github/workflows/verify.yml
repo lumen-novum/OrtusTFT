@@ -20,10 +20,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.7.3
+    # Why doesn't Python 3.7.3 exist!!!
+    # Suppported versions: https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
+    - name: Set up Python 3.7.5
       uses: actions/setup-python@v3
       with:
-        python-version: "3.7.3"
+        python-version: "3.7.5"
     - name: Install flake8
       run: |
         python3 -m pip install --upgrade pip
