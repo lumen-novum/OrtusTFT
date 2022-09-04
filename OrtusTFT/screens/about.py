@@ -8,7 +8,7 @@ import logging
 
 class AboutScreen:
     def __init__(self, necessities):
-        self.tft, self.display_command, self.button_queue, self.touch_queue, self.weather_queues, self.weather = necessities
+        self.tft, self.display_command, self.button_queue, self.touch_queue, self.weather_queues, self.weather, self.demo = necessities
     
     def display(self):
         back_button = self.tft.format_label("back_button", ((5, 5), self.tft.MINI_ICON), "topleft", image="previous.png", button=True)

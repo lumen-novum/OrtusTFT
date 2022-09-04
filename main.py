@@ -1,20 +1,38 @@
-import configure # Verifies that the necessary info is there to start OrtusTFT
+import multiprocessing
+import logging
+from sys import argv
 
-import OrtusTFT.interface
-import OrtusTFT.weather
+from OrtusTFT import configure, interface, weather
 from OrtusTFT.screens import home, statistics, about, wip, sleep_screen
 
-import multiprocessing
+demo = False
+logging_level = logging.INFO
+
+if argv.count("--debug") == 1:
+    logging_level = logging.DEBUG
+logging.basicConfig(format="[%(levelname)s] [%(module)s:%(funcName)s]  %(message)s", level=logging_level)
+
+if (argv.count("--demo") == 1 or
+        argv.count("-d") == 1):
+    logging.debug("Demo argument found. Running OrtusTFT demo...")
+    demo = True
+elif (argv.count("--setup") == 1 or
+        argv.count("-s") == 1):    
+    logging.debug("Setup argument found. Running OrtusTFT setup...")
+    configure.main()
+else:
+    logging.debug("No extra arguments were found. Verifying config file and running OrtusTFT...")
+    configure.verify_integrity()
 
 if __name__ == "__main__":
     try:
         weather_queues = (multiprocessing.Queue(), multiprocessing.Queue())
-        weather = OrtusTFT.weather.Weather(weather_queues)
+        weather = weather.Weather(weather_queues, demo)
 
         touch_queue = multiprocessing.Queue() # Manages touch coordinates
         button_queue = multiprocessing.Queue() # Allows buttons to be created within the touch handler system
         display_command = multiprocessing.Queue() # Manages pygame and TFT
-        tft = OrtusTFT.interface.Main(touch_queue, display_command, button_queue)
+        tft = interface.Main(touch_queue, display_command, button_queue, demo)
     
         touch_process = multiprocessing.Process(target=tft.touch_handler, args=())
         screen_process = multiprocessing.Process(target=tft.screen_handler, args=())
@@ -26,7 +44,7 @@ if __name__ == "__main__":
 
         current_screen = "Home"
 
-        necessities = (tft, display_command, button_queue, touch_queue, weather_queues, weather)
+        necessities = (tft, display_command, button_queue, touch_queue, weather_queues, weather, demo)
         hs = home.HomeScreen(necessities)
         weather_stats = statistics.StatScreen(necessities)
         about_page = about.AboutScreen(necessities)

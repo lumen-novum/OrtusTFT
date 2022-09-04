@@ -6,7 +6,7 @@ import logging
 
 class StatScreen:
     def __init__(self, necessities):
-        self.tft, self.display_command, self.button_queue, self.touch_queue, self.weather_queues, self.weather = necessities
+        self.tft, self.display_command, self.button_queue, self.touch_queue, self.weather_queues, self.weather, self.demo = necessities
 
     def display(self):
         weather_info = self.weather.request_weather_info(self.weather_queues, "stats")

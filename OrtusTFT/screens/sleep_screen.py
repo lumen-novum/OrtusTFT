@@ -2,12 +2,13 @@ from time import sleep
 
 class TempSleep:
     def __init__(self, necessities):
-        self.tft, self.display_command, self.button_queue, self.touch_queue, self.weather_queues, self.weather = necessities
+        self.tft, self.display_command, self.button_queue, self.touch_queue, self.weather_queues, self.weather, self.demo = necessities
         
     def display(self, last_screen):      
         self.tft.create_element(self.display_command, self.tft.format_label("power", ((0, 0), (240, 320)), "topleft", fill=self.tft.BLACK, button=True), button_reg=self.button_queue)
-        with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
-            backlight.write("0")
+        if not self.demo:
+            with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
+                backlight.write("0")
 
         deep_sleep = 0
         reset_screen = False
@@ -31,5 +32,6 @@ class TempSleep:
 
     def clean_up(self):
         self.tft.clear_screen(self.display_command, self.button_queue)
-        with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
-            backlight.write("1")
+        if not self.demo:
+            with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
+                backlight.write("1")

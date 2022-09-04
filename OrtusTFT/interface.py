@@ -10,7 +10,9 @@ import logging
 
 
 class Main:
-    def __init__(self, notify, command, button_reg):
+    def __init__(self, notify, command, button_reg, demo):
+        self.demo = demo
+        
         if os.geteuid() != 0:
             logging.critical("Display cannot initalize without root access.")
             terminate()

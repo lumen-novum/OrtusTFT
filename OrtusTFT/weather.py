@@ -9,7 +9,9 @@ import logging
 
 
 class Weather:
-    def __init__(self, data_queues):
+    def __init__(self, data_queues, demo):
+        self.demo = demo
+        
         self.url = "https://api.tomorrow.io/v4/timelines"
 
         self.login = {
