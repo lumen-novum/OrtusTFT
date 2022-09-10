@@ -1,7 +1,6 @@
 import pygame
 import os
 from time import sleep
-import evdev
 import json
 from sys import exit as terminate
 
@@ -19,24 +18,33 @@ class Main:
 
         self.SCREEN_SIZE = (240, 320)
 
-        with open("OrtusTFT/info.json", "r") as data:
-            display_data = json.load(data)
+        if not demo:
+            import evdev
 
-        self.X_CALIBRATION = display_data["display"]["xCalibration"]
-        self.X_OFFSET = display_data["display"]["xOffset"]
-        self.Y_CALIBRATION = display_data["display"]["yCalibration"]
-        self.Y_OFFSET = display_data["display"]["yOffset"]
+            with open("OrtusTFT/info.json", "r") as data:
+                display_data = json.load(data)
+
+            self.X_CALIBRATION = display_data["display"]["xCalibration"]
+            self.X_OFFSET = display_data["display"]["xOffset"]
+            self.Y_CALIBRATION = display_data["display"]["yCalibration"]
+            self.Y_OFFSET = display_data["display"]["yOffset"]
+
+            os.putenv("SDL_FBDEV", "/dev/fb1")
+
+            with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
+                backlight.write("1")
+
+            # Declare display and touchscreen input paths
+            self.touchscreen = evdev.InputDevice("/dev/input/touchscreen")
 
         self.SCROLL_PAUSE = 120
         self.SCROLL_SPEED = 5
 
         self.WHITE = (255,255,255)
-        self.BLACK = (0,0,0)
+        self.BLACK = (0,0,0)           
 
-        # Prepare pygame
-        os.putenv("SDL_FBDEV", "/dev/fb1")
         pygame.init()
-        pygame.mouse.set_visible(False)
+        pygame.mouse.set_visible(demo)
         self.tft = pygame.display.set_mode(self.SCREEN_SIZE)
         self.tft.fill(self.WHITE)
         pygame.display.flip()
@@ -55,9 +63,6 @@ class Main:
         self.WEATHER_ICON = (72, 72)
         self.MINI_ICON = (32, 32)
 
-        # Declare display and touchscreen input paths
-        self.touchscreen = evdev.InputDevice("/dev/input/touchscreen")
-
         # Declare variables
         self.activated = False
         self.notify = notify
@@ -66,12 +71,17 @@ class Main:
 
         self.buttons = {}
         self.scrolling_text = {}
-        
 
-        with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
-            backlight.write("1")
 
     def touch_handler(self):
+        def button_collsion(x,y):
+            detected_button = None
+            for button in self.buttons:
+                hitbox = self.buttons[button]
+                if hitbox.collidepoint(x, y):
+                    detected_button = button
+                    return detected_button
+
         while True:
             while not self.newbutton.empty():
                 new = self.newbutton.get()
@@ -87,47 +97,55 @@ class Main:
 
                 self.buttons[new[0]] = rect
 
-            event = self.touchscreen.read_one()
-            if event != None:
-                # Calculate where the screen is being pressed
-                raw_x = self.touchscreen.absinfo(0).value
-                raw_y = self.touchscreen.absinfo(1).value
-                pos_calc = lambda raw_xy, offset, cali: int((raw_xy - offset) / cali)
+            if not self.demo:
+                event = self.touchscreen.read_one()
+                if event != None:
+                    # Calculate where the screen is being pressed
+                    raw_x = self.touchscreen.absinfo(0).value
+                    raw_y = self.touchscreen.absinfo(1).value
+                    pos_calc = lambda raw_xy, offset, cali: int((raw_xy - offset) / cali)
 
-                x_value = pos_calc(raw_x, self.X_OFFSET, self.X_CALIBRATION)
-                y_value = pos_calc(raw_y, self.Y_OFFSET, self.Y_CALIBRATION)
+                    x_value = pos_calc(raw_x, self.X_OFFSET, self.X_CALIBRATION)
+                    y_value = pos_calc(raw_y, self.Y_OFFSET, self.Y_CALIBRATION)
+                    
+                    # If x or y values overflow, set the value to the max.
+                    # If x or y values underflow, set the value to the min.
+                    if x_value < 0:
+                        x_value = 0
+                    elif x_value > 240:
+                        x_value = 240
+
+                    if y_value < 0:
+                        y_value = 0
+                    elif y_value > 320:
+                        y_value = 320
                 
+                    # Loop through all buttons to see if one of them 
+                    # collides with where the screen was pressed
+                    
+                    button_found = button_collsion(x_value, y_value)
 
-                # If x or y values overflow, set the value to the max.
-                # If x or y values underflow, set the value to the min.
-                if x_value < 0:
-                    x_value = 0
-                elif x_value > 240:
-                    x_value = 240
+                    self.notify.put([x_value, y_value, button_found])
+                    
+                    # Give time for the Raspberry Pi to respond to the press
+                    sleep(1)
 
-                if y_value < 0:
-                    y_value = 0
-                elif y_value > 320:
-                    y_value = 320
-            
-                # Loop through all buttons to see if one of them 
-                # collides with where the screen was pressed
-                detected_button = None
-                for button in self.buttons:
-                    hitbox = self.buttons[button]
-                    if hitbox.collidepoint(x_value, y_value):
-                        detected_button = button
-                        break
+                    # Clear unnecessary "pressure" events
+                    for _ in self.touchscreen.read():
+                        pass
+            elif self.demo:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        x_value, y_value = pygame.mouse.get_pos()
 
-                self.notify.put([x_value, y_value, detected_button])
-                
-                # Give time for the Raspberry Pi to respond to the press
-                sleep(1)
+                        button_found = button_collsion(x_value, y_value)
 
-                # Clear unnecessary "pressure" events
-                for _ in self.touchscreen.read():
-                    pass
-                
+                        self.notify.put([x_value, y_value, button_found])
+                    
+                        # Give time for the Raspberry Pi to respond to the press
+                        sleep(1)
                     
             sleep(0.1) # Check about 240 times a second for screen events
 
@@ -274,7 +292,7 @@ class Main:
                     self.text_label(property["text"], property["alignment"], property["position"], property["size"])
                 elif item["type"] == "button" or item["type"] == "label":
                     property = item["properties"]
-                    self.label(property["image"], property["rect"], property["alignment"], property["fill"], property["outline"])
+                    self.label(property["image"], property["rect"], property["alignment"], property["fill"], property["outline"])  
 
             self.clock.tick(24)
             pygame.display.flip()
