@@ -28,7 +28,7 @@ Extract the zip file and run the following command in the root folder of OrtusTF
 
 ```python3 main.py --demo```
 
-*Note: Root/Admin access isn't necessary here because we aren't controlling any physical hardware*
+*Note: Root/Admin access isn't necessary here because we aren't directly controlling any physical hardware*
 
 Enjoy!
 
