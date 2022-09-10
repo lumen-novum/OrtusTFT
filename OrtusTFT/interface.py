@@ -16,7 +16,7 @@ class Main:
 
         if not demo:
             import evdev
-            
+
             if os.geteuid() != 0:
                 logging.critical("Display cannot initalize without root access.")
                 terminate()
@@ -51,15 +51,19 @@ class Main:
         self.clock = pygame.time.Clock()	
 
         self.image_list = {}
-        self.DAY = pygame.image.load("/home/pi/OrtusTFT/OrtusTFT/assets/images/gradients/day.png").convert_alpha()
-        self.NIGHT = pygame.image.load("/home/pi/OrtusTFT/OrtusTFT/assets/images/gradients/night.png").convert_alpha()
-        self.SUNRISE = pygame.image.load("/home/pi/OrtusTFT/OrtusTFT/assets/images/gradients/sunrise.png").convert_alpha()
-        self.SUNSET = pygame.image.load("/home/pi/OrtusTFT/OrtusTFT/assets/images/gradients/sunset.png").convert_alpha()
+
+        self.RELATIVE_PATH = os.path.dirname(__file__)
+        logging.debug("Current Pygame path is: {}".format(self.RELATIVE_PATH))
+
+        self.DAY = pygame.image.load("{}/assets/images/gradients/day.png".format(self.RELATIVE_PATH)).convert_alpha()
+        self.NIGHT = pygame.image.load("{}/assets/images/gradients/night.png".format(self.RELATIVE_PATH)).convert_alpha()
+        self.SUNRISE = pygame.image.load("{}/assets/images/gradients/sunrise.png".format(self.RELATIVE_PATH)).convert_alpha()
+        self.SUNSET = pygame.image.load("{}/assets/images/gradients/sunset.png".format(self.RELATIVE_PATH)).convert_alpha()
         self.time = "day"
 
-        self.HEADER_FONT = pygame.font.Font("/home/pi/OrtusTFT/OrtusTFT/assets/fonts/bold.ttf", 30)
-        self.SUBHEADER_FONT = pygame.font.Font("/home/pi/OrtusTFT/OrtusTFT/assets/fonts/main.ttf", 25)
-        self.PARAGRAPH_FONT = pygame.font.Font("/home/pi/OrtusTFT/OrtusTFT/assets/fonts/light.ttf", 20)
+        self.HEADER_FONT = pygame.font.Font("{}/assets/fonts/bold.ttf".format(self.RELATIVE_PATH), 30)
+        self.SUBHEADER_FONT = pygame.font.Font("{}/assets/fonts/main.ttf".format(self.RELATIVE_PATH), 25)
+        self.PARAGRAPH_FONT = pygame.font.Font("{}/assets/fonts/light.ttf".format(self.RELATIVE_PATH), 20)
         self.WEATHER_ICON = (72, 72)
         self.MINI_ICON = (32, 32)
 
@@ -262,7 +266,7 @@ class Main:
                     if object_indexes.count(command_info["element"]["id"]) == 0:
                         properties = command_info["element"]["properties"]
                         if properties.get("image") != self.image_list.get(properties.get("image")):
-                            self.image_list[properties["image"]] = (pygame.image.load("/home/pi/OrtusTFT/OrtusTFT/assets/images/" + properties["image"]).convert_alpha())
+                            self.image_list[properties["image"]] = (pygame.image.load("{}/assets/images/".format(self.RELATIVE_PATH) + properties["image"]).convert_alpha())
 
                         screen_objects.append(command_info["element"])
                         object_indexes.append(command_info["element"]["id"])
@@ -271,7 +275,7 @@ class Main:
                         terminate()
                 elif command_info["request"] == "update":
                     if command_info["aspect"] == "image" and command_info["data"] != self.image_list.get(command_info["data"]):
-                        self.image_list[command_info["data"]] = (pygame.image.load("/home/pi/OrtusTFT/OrtusTFT/assets/images/" + command_info["data"]).convert_alpha())
+                        self.image_list[command_info["data"]] = (pygame.image.load("{}/assets/images/".format(self.RELATIVE_PATH) + command_info["data"]).convert_alpha())
 
                     element_index = object_indexes.index(command_info["id"])
                     screen_objects[element_index]["properties"][command_info["aspect"]] = command_info["data"]
