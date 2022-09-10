@@ -11,15 +11,15 @@ import logging
 class Main:
     def __init__(self, notify, command, button_reg, demo):
         self.demo = demo
-        
-        if os.geteuid() != 0:
-            logging.critical("Display cannot initalize without root access.")
-            terminate()
 
         self.SCREEN_SIZE = (240, 320)
 
         if not demo:
             import evdev
+            
+            if os.geteuid() != 0:
+                logging.critical("Display cannot initalize without root access.")
+                terminate()
 
             with open("OrtusTFT/info.json", "r") as data:
                 display_data = json.load(data)
