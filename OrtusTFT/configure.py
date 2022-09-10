@@ -1,7 +1,6 @@
 import json
 import requests
 import pygame
-import evdev
 import os
 import logging
 from sys import exit as terminate
@@ -116,6 +115,8 @@ def weather_setup():
 
 # Calibrate display so it can properly recieve screen presses.
 def display_setup():
+    import evdev
+    
     if os.geteuid() != 0:
         logging.critical("Display cannot initalize without root access.")
         terminate()
