@@ -1,14 +1,16 @@
 from time import sleep
 from sys import exit as terminate
+import datetime
 
 # As long as the "configure" module has been imported, we don't have to worry about creating a basic config.
 import logging
+import weather
 
 class HomeScreen:
     def __init__(self, necessities):
-        self.tft, self.display_command, self.button_queue, self.touch_queue, self.weather_queues, self.weather, self.demo = necessities
+        self.tft, self.display_command, self.button_queue, self.touch_queue, self.weather_queues = necessities
 
-        self.NAME = self.weather.read_local_data("name")
+        self.NAME = weather.read_local_data("name")
 
     def display(self):
         def find_current_data():
@@ -18,8 +20,8 @@ class HomeScreen:
                 return "Good Afternoon,", "weatherCodeDay"
             return "Good {},".format(day_phase.capitalize()), "weatherCodeDay"
 
-        weather_info = self.weather.request_weather_info(self.weather_queues, "home")
-        day_phase = self.weather.get_day_phase(self.weather.request_weather_info(self.weather_queues, "day_phase"))
+        weather_info = weather.request_weather_info(self.weather_queues, "home")
+        day_phase = weather.get_day_phase(weather.request_weather_info(self.weather_queues, "day_phase"))
         local = find_current_data()
 
         welcome_label = self.tft.format_text("welcome_label", local[0], "midtop", (120,10), "header")
@@ -61,18 +63,18 @@ class HomeScreen:
                     sleepiness += 1
 
 
-            new_data = self.weather.request_weather_info(self.weather_queues, "home", wait=True)
+            new_data = weather.request_weather_info(self.weather_queues, "home", wait=True)
 
             if new_data:
-                day_phase = self.weather.get_day_phase(self.weather.request_weather_info(self.weather_queues, "day_phase"))
+                day_phase = weather.get_day_phase(weather.request_weather_info(self.weather_queues, "day_phase"))
                 self.tft.background(self.display_command, day_phase)
                 local = find_current_data()
 
                 self.tft.update_element(self.display_command, "welcome_label", "text", local[0])
                 self.tft.update_element(self.display_command, "weather_button", "image", "weather_icons/{}.png".format(new_data[local[1]]))
                 current_temperature = new_data["temperature"]
-                    
-            self.tft.update_element(self.display_command, "time_temp_label", "text", "{} F°   {}".format(current_temperature, self.weather.current_time()))
+            
+            self.tft.update_element(self.display_command, "time_temp_label", "text", "{} F°   {}".format(current_temperature, (datetime.now()).strftime("%-I:%M %p")))
             sleep(0.1)
 
     def clean_up(self):

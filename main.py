@@ -2,8 +2,7 @@ import multiprocessing
 import logging
 from sys import argv
 
-from OrtusTFT import configure, interface, weather
-from OrtusTFT.screens import home, statistics, about, wip, sleep_screen
+from OrtusTFT import configure, interface, weather, screens
 
 # Set default values
 demo = False
@@ -26,47 +25,35 @@ else:
     configure.verify_integrity()
 
 if __name__ == "__main__":
-    try:
-        weather_queues = (multiprocessing.Queue(), multiprocessing.Queue())
-        weather = weather.Weather(weather_queues, demo)
+    weather_input = multiprocessing.Queue()
+    weather_output = multiprocessing.Queue()
 
-        touch_queue = multiprocessing.Queue() # Manages touch coordinates
-        button_queue = multiprocessing.Queue() # Allows buttons to be created within the touch handler system
-        display_command = multiprocessing.Queue() # Manages pygame and TFT
-        tft = interface.Main(touch_queue, display_command, button_queue, demo)
-    
-        touch_process = multiprocessing.Process(target=tft.touch_handler, args=())
-        screen_process = multiprocessing.Process(target=tft.screen_handler, args=())
-        weather_process = multiprocessing.Process(target=weather.weather_handler, args=())
+    touch_queue = multiprocessing.Queue() # Manages touch coordinates
+    button_queue = multiprocessing.Queue() # Allows buttons to be created within the touch handler system
+    display_command = multiprocessing.Queue() # Manages pygame and TFT
 
+    if not demo:
+        touch_process = multiprocessing.Process(target=interface.touch_handler, args=(touch_queue))
         touch_process.start()
-        screen_process.start()
-        weather_process.start()
 
-        current_screen = "Home"
+    screen_process = multiprocessing.Process(target=interface.screen_handler, args=(display_command, button_queue, touch_queue, demo))
+    weather_process = multiprocessing.Process(target=weather.weather_handler, args=(weather_input, weather_output))
 
-        necessities = (tft, display_command, button_queue, touch_queue, weather_queues, weather, demo)
-        hs = home.HomeScreen(necessities)
-        weather_stats = statistics.StatScreen(necessities)
-        about_page = about.AboutScreen(necessities)
-        wip_page = wip.WorkInProgress(necessities)
-        power_off = sleep_screen.TempSleep(necessities)
+    screen_process.start()
+    weather_process.start()
 
-        while True:
-            if current_screen == "Home":
-                current_screen = hs.display()
-            elif current_screen == "Stats":
-                current_screen = weather_stats.display()
-            elif current_screen == "Stats 2":
-                current_screen = weather_stats.display_second_page()
-            elif current_screen == "About":
-                current_screen = about_page.display()
-            elif current_screen[0:3] == "Off":
-                current_screen = power_off.display(current_screen[4:len(current_screen)])
-            else:
-                current_screen = wip_page.display()
+    current_screen = "Home"
 
-
-    finally:
-        # TODO: Introduce proper cleanup
-        pass
+    while True:
+        if current_screen == "Home":
+            current_screen = screens.home()
+        elif current_screen == "Stats":
+            current_screen = screens.weather_report(1)
+        elif current_screen == "Stats 2":
+            current_screen = screens.weather_report(2)
+        elif current_screen == "About":
+            current_screen = screens.about()
+        elif current_screen[0:3] == "Off":
+            current_screen = screens.sleep_screen(current_screen[4:len(current_screen)])
+        else:
+            current_screen = screens.wip()

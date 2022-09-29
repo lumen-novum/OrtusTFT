@@ -3,6 +3,7 @@ from sys import exit as terminate
 
 # As long as the "configure" module has been imported, we don't have to worry about creating a basic config.
 import logging
+import datetime
 
 class StatScreen:
     def __init__(self, necessities):
@@ -66,7 +67,7 @@ class StatScreen:
                 else:
                     sleepiness += 1
             
-            self.tft.update_element(self.display_command, "time_label", "text", self.weather.current_time())
+            self.tft.update_element(self.display_command, "time_label", "text", (datetime.now()).strftime("%-I:%M %p"))
 
             new_data = self.weather.request_weather_info(self.weather_queues, "stats", wait=True)
             if new_data:
@@ -146,7 +147,7 @@ class StatScreen:
             day_phase = self.weather.get_day_phase(self.weather.request_weather_info(self.weather_queues, "day_phase"))
             self.tft.background(self.display_command, day_phase)
 
-            self.tft.update_element(self.display_command, "time_label", "text", self.weather.current_time())
+            self.tft.update_element(self.display_command, "time_label", "text", (datetime.now()).strftime("%-I:%M %p"))
             sleep(0.1)
 
     def clean_up(self):
