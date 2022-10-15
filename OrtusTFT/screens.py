@@ -1,21 +1,23 @@
 import logging
-import weather
-import interface
 
 from time import sleep
 from sys import exit as terminate
-
-NAME = weather.read_local_data("name")
+from OrtusTFT import interface, weather
 
 # Not the best idea. I might need to convert this module with functions into a class in the future.
 def init(display_q, touch_q, button_q, weather_q, d):
-    global display_command, weather_queues, touch_queue, button_queue, demo
+    global display_command, weather_queues, touch_queue, button_queue, demo, NAME
 
     display_command = display_q
     weather_queues = weather_q
     touch_queue = touch_q
     button_queue = button_q
     demo = d
+
+    if demo:
+        NAME = "Test User"
+    else:
+        NAME = weather.read_local_data("name")
 
 def background_process(current_screen, btn_keys, **kwargs):
     sleepiness = 0

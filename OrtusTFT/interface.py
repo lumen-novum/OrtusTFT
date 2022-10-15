@@ -1,6 +1,5 @@
 import pygame
 import os
-import weather
 from time import sleep
 import json
 from sys import exit as terminate
@@ -20,7 +19,12 @@ BLACK = (0,0,0)
 WEATHER_ICON = (72, 72)
 MINI_ICON = (32, 32)
 
-def setup(demo):
+def setup(weather_module):
+    global weather
+    weather = weather_module
+
+"""
+def setup(demo, weather_module):
     if not demo:
         if os.geteuid() != 0:
             logging.critical("Display cannot initalize without root access.")
@@ -31,7 +35,8 @@ def setup(demo):
         with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
             backlight.write("1")       
 
-    global HEADER_FONT, SUBHEADER_FONT, PARAGRAPH_FONT
+    global HEADER_FONT, SUBHEADER_FONT, PARAGRAPH_FONT, weather
+    weather = weather_module
 
     pygame.init()
     pygame.mouse.set_visible(demo)
@@ -44,6 +49,7 @@ def setup(demo):
     PARAGRAPH_FONT = pygame.font.Font("{}/assets/fonts/light.ttf".format(RELATIVE_PATH), 20)
 
     return tft
+"""
 
 def touch_handler(newbutton, send_press, demo):
     buttons = {}
@@ -69,6 +75,10 @@ def touch_handler(newbutton, send_press, demo):
         Y_CALIBRATION = display_data["yCalibration"]
         Y_OFFSET = display_data["yOffset"]
 
+    x_value = 0
+    y_value = 0
+    is_pressed = False
+
     while True:
         while not newbutton.empty():
             new = newbutton.get()
@@ -82,6 +92,7 @@ def touch_handler(newbutton, send_press, demo):
             elif new[0] == "pygame_press":
                 x_value = new[1]
                 y_value = new[2]
+                is_pressed = True
             else:
                 rect = pygame.Rect(new[1])
 
@@ -113,18 +124,19 @@ def touch_handler(newbutton, send_press, demo):
         # Loop through all buttons to see if one of them 
         # collides with where the screen was pressed
         
-        button_found = button_collsion(x_value, y_value)
+        if is_pressed:
+            button_found = button_collsion(x_value, y_value)
 
-        send_press.put([x_value, y_value, button_found])
+            send_press.put([x_value, y_value, button_found])
         
-        # If using real hardware, clean up touch events
-        if not demo:
-            # Give time for the Raspberry Pi to respond to the press
-            sleep(1)
+            # If using real hardware, clean up touch events
+            if not demo:
+                # Give time for the Raspberry Pi to respond to the press
+                sleep(1)
 
-            # Clear unnecessary "pressure" events
-            for _ in touchscreen.read():
-                pass
+                # Clear unnecessary "pressure" events
+                for _ in touchscreen.read():
+                    pass
 
             
                 
@@ -248,12 +260,34 @@ class Label:
     #if outline:
     #    pygame.draw.rect(tft, outline, pygame.Rect(rect))
 
-def screen_handler(tft, display_queue, notify_touch_sys):
+def screen_handler(display_queue, notify_touch_sys, demo):
     clock = pygame.time.Clock()	
     screen_objects, object_indexes = list(), list()
     image_list, scrolling_text = dict(), dict()
 
     day_phase = "day"
+
+    if not demo:
+        if os.geteuid() != 0:
+            logging.critical("Display cannot initalize without root access.")
+            terminate()
+
+        os.putenv("SDL_FBDEV", "/dev/fb1")
+
+        with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
+            backlight.write("1")       
+
+    global HEADER_FONT, SUBHEADER_FONT, PARAGRAPH_FONT
+
+    pygame.init()
+    pygame.mouse.set_visible(demo)
+    tft = pygame.display.set_mode(SCREEN_SIZE)
+    tft.fill(WHITE)
+    pygame.display.flip()
+
+    HEADER_FONT = pygame.font.Font("{}/assets/fonts/bold.ttf".format(RELATIVE_PATH), 30)
+    SUBHEADER_FONT = pygame.font.Font("{}/assets/fonts/main.ttf".format(RELATIVE_PATH), 25)
+    PARAGRAPH_FONT = pygame.font.Font("{}/assets/fonts/light.ttf".format(RELATIVE_PATH), 20)
 
     while True:
         tft.blit(display_background(day_phase), (0, 0))

@@ -25,7 +25,7 @@ else:
     configure.verify_integrity()
 
 if __name__ == "__main__":
-    adafruit_tft = interface.setup(demo)
+    adafruit_tft = interface.setup(weather)
     
     weather_input = multiprocessing.Queue()
     weather_output = multiprocessing.Queue()
@@ -35,8 +35,10 @@ if __name__ == "__main__":
     display_command = multiprocessing.Queue() # Manages pygame and TFT
 
     touch_process = multiprocessing.Process(target=interface.touch_handler, args=(button_queue, touch_queue, demo))
-    screen_process = multiprocessing.Process(target=interface.screen_handler, args=(display_command, button_queue, touch_queue, demo))
+    screen_process = multiprocessing.Process(target=interface.screen_handler, args=(display_command, button_queue, demo))
     weather_process = multiprocessing.Process(target=weather.weather_handler, args=(weather_input, weather_output))
+
+    screens.init(display_command, touch_queue, button_queue, (weather_input, weather_output), demo)
 
     screen_process.start()
     touch_process.start()
