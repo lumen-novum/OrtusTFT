@@ -113,18 +113,18 @@ def weather_handler(input_queue, output_queue):
             if data_pattern == "day_phase":
                 filtered_data["sunrise"] = weather_info[1][0]["values"]["sunriseTime"]
                 filtered_data["sunset"] = weather_info[1][0]["values"]["sunsetTime"]
-            elif data_pattern == "home":
+            elif data_pattern == "Home":
                 filtered_data["temperature"] = int(weather_info[0][0]["values"]["temperature"]) # Int conversion isn't required, but it just rounds it down.
                 filtered_data["weatherCodeDay"] = weather_info[1][0]["values"]["weatherCodeDay"]
                 filtered_data["weatherCodeNight"] = weather_info[1][0]["values"]["weatherCodeNight"]
-            elif data_pattern == "stats":
+            elif data_pattern == "Stats":
                 hour_fields = ("temperature", "windSpeed", "visibility", "humidity", "cloudCover")
 
                 for field in hour_fields:
                     filtered_data[field] = int(weather_info[0][0]["values"][field])
 
                 filtered_data["moonPhase"] = get_moon_phase(str(weather_info[1][0]["values"]["moonPhase"]))
-            elif data_pattern == "stats 2":
+            elif data_pattern == "Stats 2":
                 filtered_data["day_weather"] = weather_info[1][0]["values"]["weatherCodeDay"]
                 filtered_data["night_weather"] = weather_info[1][0]["values"]["weatherCodeNight"]
 

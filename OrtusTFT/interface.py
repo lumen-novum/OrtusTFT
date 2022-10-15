@@ -20,8 +20,6 @@ BLACK = (0,0,0)
 WEATHER_ICON = (72, 72)
 MINI_ICON = (32, 32)
 
-time = "day"
-
 def setup(demo):
     if not demo:
         if os.geteuid() != 0:
@@ -33,6 +31,8 @@ def setup(demo):
         with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
             backlight.write("1")       
 
+    global HEADER_FONT, SUBHEADER_FONT, PARAGRAPH_FONT
+
     pygame.init()
     pygame.mouse.set_visible(demo)
     tft = pygame.display.set_mode(SCREEN_SIZE)
@@ -43,13 +43,11 @@ def setup(demo):
     SUBHEADER_FONT = pygame.font.Font("{}/assets/fonts/main.ttf".format(RELATIVE_PATH), 25)
     PARAGRAPH_FONT = pygame.font.Font("{}/assets/fonts/light.ttf".format(RELATIVE_PATH), 20)
 
-# Declare variables
-activated = False
-notify = notify
-command = command
-newbutton = button_reg
+    return tft
 
-def touch_handler():
+def touch_handler(newbutton, send_press, demo):
+    buttons = {}
+
     def button_collsion(x,y):
         detected_button = None
         for button in buttons:
@@ -58,17 +56,18 @@ def touch_handler():
                 detected_button = button
                 return detected_button
 
-    # Not very pythonic, but it allows people who are running the demo to skip installing an unnecessary package
-    import evdev
+    if not demo:
+        # Not very pythonic, but it allows people who are running the demo to skip installing an unnecessary package
+        import evdev
 
-    # Declare display and touchscreen input paths
-    touchscreen = evdev.InputDevice("/dev/input/touchscreen")
+        # Declare display and touchscreen input paths
+        touchscreen = evdev.InputDevice("/dev/input/touchscreen")
 
-    display_data = weather.read_local_data("display")
-    X_CALIBRATION = display_data["xCalibration"]
-    X_OFFSET = display_data["xOffset"]
-    Y_CALIBRATION = display_data["yCalibration"]
-    Y_OFFSET = display_data["yOffset"]
+        display_data = weather.read_local_data("display")
+        X_CALIBRATION = display_data["xCalibration"]
+        X_OFFSET = display_data["xOffset"]
+        Y_CALIBRATION = display_data["yCalibration"]
+        Y_OFFSET = display_data["yOffset"]
 
     while True:
         while not newbutton.empty():
@@ -80,11 +79,15 @@ def touch_handler():
             elif new[2] == "topright":
                 specs = new[1]
                 rect = pygame.Rect((specs[0][0]-specs[1][0], specs[0][1]), specs[1])
+            elif new[0] == "pygame_press":
+                x_value = new[1]
+                y_value = new[2]
             else:
                 rect = pygame.Rect(new[1])
 
             buttons[new[0]] = rect
 
+        if not demo:
             event = touchscreen.read_one()
             if event != None:
                 # Calculate where the screen is being pressed
@@ -106,147 +109,168 @@ def touch_handler():
                     y_value = 0
                 elif y_value > 320:
                     y_value = 320
-            
-                # Loop through all buttons to see if one of them 
-                # collides with where the screen was pressed
-                
-                button_found = button_collsion(x_value, y_value)
+        
+        # Loop through all buttons to see if one of them 
+        # collides with where the screen was pressed
+        
+        button_found = button_collsion(x_value, y_value)
 
-                notify.put([x_value, y_value, button_found])
-                
-                # Give time for the Raspberry Pi to respond to the press
-                sleep(1)
+        send_press.put([x_value, y_value, button_found])
+        
+        # If using real hardware, clean up touch events
+        if not demo:
+            # Give time for the Raspberry Pi to respond to the press
+            sleep(1)
 
-                # Clear unnecessary "pressure" events
-                for _ in touchscreen.read():
-                    pass
+            # Clear unnecessary "pressure" events
+            for _ in touchscreen.read():
+                pass
 
             
                 
         sleep(0.1) # Check about 240 times a second for screen events
 
-def display_background(self):
-    if time == "day":
+def display_background(day_phase):
+    if day_phase == "day":
         DAY = pygame.image.load("{}/assets/images/gradients/day.png".format(RELATIVE_PATH)).convert_alpha()
         background = pygame.transform.scale(DAY, (240, 320))
-    elif time == "night":
+    elif day_phase == "night":
         NIGHT = pygame.image.load("{}/assets/images/gradients/night.png".format(RELATIVE_PATH)).convert_alpha()
         background = pygame.transform.scale(NIGHT, (240, 320))
-    elif time == "morning":
+    elif day_phase == "morning":
         SUNRISE = pygame.image.load("{}/assets/images/gradients/sunrise.png".format(RELATIVE_PATH)).convert_alpha()
         background = pygame.transform.scale(SUNRISE, (240, 320))
-    elif time == "evening":
+    elif day_phase == "evening":
         SUNSET = pygame.image.load("{}/assets/images/gradients/sunset.png".format(RELATIVE_PATH)).convert_alpha()
         background = pygame.transform.scale(SUNSET, (240, 320))
 
-    tft.blit(background, (0, 0))
+    return background
 
-def text_label(self, text, alignment, position, font):
-    def wait(time):
-        if scrolling_text[text]["time_waiting"] < time:
-            scrolling_text[text]["time_waiting"] += 1
+class TextLabel:
+    def __init__(self, text, alignment, position, font, day_phase):
+        self.text = text
+        self.alignment = alignment
+        self.position = position
+        self.font = font
+        self.day_phase = day_phase
+
+        self.scrolling_index = -1
+        self.scrolling_waiting = 0
+
+        self.text_boxes = {}
+
+        for line in self.text.splitlines():
+            if len(line) > 20 and self.font == "paragraph":
+                self.scrolling_index = 20
+                line = line[0:20]
+
+            if self.day_phase == "night":
+                color = WHITE
+            else:
+                color = BLACK
+
+            if self.font == "header":
+                pyg_font = HEADER_FONT
+                text_box = HEADER_FONT.render(line, True, color)
+            elif self.font == "subheader":
+                pyg_font = SUBHEADER_FONT
+                text_box = SUBHEADER_FONT.render(line, True, color)
+            elif self.font == "paragraph":
+                pyg_font = PARAGRAPH_FONT
+                text_box = PARAGRAPH_FONT.render(line, True, color)
+            else:
+                logging.critical("Invaild font type: {}".format(self.font))
+                terminate()
+
+            if self.alignment == "topleft":
+                text_position = text_box.get_rect(topleft= position)
+            elif self.alignment == "midtop":
+                text_position = text_box.get_rect(midtop= position)
+            #tft.blit(text_box, text_position)
+            self.text_boxes[text_box] = text_position
+            position = list(position)
+            position[1] += pygame.font.Font.size(pyg_font, line)[1]
+
+    def wait(self, time):
+        if self.scrolling_waiting < time:
+            self.scrolling_waiting += 1
             return True
 
-        scrolling_text[text]["time_waiting"] = 0
+        self.scrolling_waiting = 0
         return False
     
-    def start(text):
-        scrolling_text[text]["index"] = 20
+    def start(self, text):
+        self.scrolling_index = 20
         return text[0:20]
 
-    def current(text):
-        index = scrolling_text[text]["index"]
+    def current(self, text):
+        index = self.scrolling_index
         return text[index-20:index]
     
-    for line in text.splitlines():
-        if scrolling_text.get(line):
-            if scrolling_text[text]["index"] == 20:
-                if wait(SCROLL_PAUSE):
-                    line = start(line)
-                else:
-                    scrolling_text[line]["index"] += 1
-                    line = current(line)
-            elif scrolling_text[line]["index"] < len(line):
-                if wait(SCROLL_SPEED):
-                    line = current(line)
-                else:
-                    scrolling_text[line]["index"] += 1
-                    line = current(line)
+    def scroll_text(self):
+        if self.scrolling_index == 20:
+            if self.wait(SCROLL_PAUSE):
+                line = self.start(line)
             else:
-                if wait(SCROLL_PAUSE):
-                    line = current(line)
-                else:
-                    line = start(line)
-        elif len(line) > 20 and font == "paragraph":
-            scrolling_text[line] = {"index": 20, "time_waiting": 0}
-            line = line[0:20]
-
-        if time == "night":
-            color = WHITE
+                self.scrolling_index += 1
+                line = self.current(line)
+        elif self.scrolling_index < len(line):
+            if self.wait(SCROLL_SPEED):
+                line = self.current(line)
+            else:
+                self.scrolling_index += 1
+                line = self.current(line)
         else:
-            color = BLACK
+            if self.wait(SCROLL_PAUSE):
+                line = self.current(line)
+            else:
+                line = self.start(line)
 
-        if font == "header":
-            pyg_font = HEADER_FONT
-            text_box = HEADER_FONT.render(line, True, color)
-        elif font == "subheader":
-            pyg_font = SUBHEADER_FONT
-            text_box = SUBHEADER_FONT.render(line, True, color)
-        elif font == "paragraph":
-            pyg_font = PARAGRAPH_FONT
-            text_box = PARAGRAPH_FONT.render(line, True, color)
-        else:
-            logging.critical("Invaild font type: {}".format(font))
-            terminate()
+class Label:
+    def __init__(self, image, rect, alignment, fill, outline):
+        self.rect = rect
+        self.alignment = alignment
+        self.fill = fill
+        self.outline = outline
 
-        if alignment == "topleft":
-            text_position = text_box.get_rect(topleft= position)
-        elif alignment == "midtop":
-            text_position = text_box.get_rect(midtop= position)
-        tft.blit(text_box, text_position)
-        position = list(position)
-        position[1] += pygame.font.Font.size(pyg_font, line)[1]
+        if image:
+            self.image = pygame.transform.scale(image, rect[1])
+            if self.alignment == "topleft":
+                self.rectangle = self.image.get_rect(topleft= self.rect[0])
+            elif self.alignment == "midtop":
+                self.rectangle = self.image.get_rect(midtop= self.rect[0])
+            elif self.alignment == "topright":
+                self.rectangle = self.image.get_rect(topright= self.rect[0])
+            else:
+                logging.critical("Expected valid rect alignment, got: {}".format(self.alignment))
+                terminate()
 
-def label(self, image, rect, alignment, fill, outline):
     #if outline:
     #    pygame.draw.rect(tft, outline, pygame.Rect(rect))
 
-    if fill:
-        tft.fill(fill, pygame.Rect(rect))
-
-    if image:
-        image = pygame.transform.scale(image_list[image], rect[1])
-
-        if alignment == "topleft":
-            rectangle = image.get_rect(topleft= rect[0])
-        elif alignment == "midtop":
-            rectangle = image.get_rect(midtop= rect[0])
-        elif alignment == "topright":
-            rectangle = image.get_rect(topright= rect[0])
-        else:
-            logging.critical("Expected valid rect alignment, got: {}".format(alignment))
-            terminate()
-
-        tft.blit(image, rectangle)
-
-def screen_handler():
+def screen_handler(tft, display_queue, notify_touch_sys):
     clock = pygame.time.Clock()	
-    screen_objects = list()
-    object_indexes = list()
-    image_list = dict()
+    screen_objects, object_indexes = list(), list()
+    image_list, scrolling_text = dict(), dict()
+
+    day_phase = "day"
 
     while True:
-        display_background()
+        tft.blit(display_background(day_phase), (0, 0))
 
-        while not command.empty():
-            command_info = command.get()
+        while not display_queue.empty():
+            command_info = display_queue.get()
             if command_info["request"] == "create":
                 if object_indexes.count(command_info["element"]["id"]) == 0:
                     properties = command_info["element"]["properties"]
                     if properties.get("image") != image_list.get(properties.get("image")):
                         image_list[properties["image"]] = (pygame.image.load("{}/assets/images/".format(RELATIVE_PATH) + properties["image"]).convert_alpha())
 
-                    screen_objects.append(command_info["element"])
+                    if command_info["element"]["type"] == "text_label":
+                        screen_objects.append(TextLabel(command_info["element"]))
+                    elif command_info["element"]["type"] == "label":
+                        screen_objects.append(Label(image_list[properties["image"]]))
+
                     object_indexes.append(command_info["element"]["id"])
                 else:
                     logging.critical("An object with a duplicate id was made. ID: {}".format(command_info["element"]["id"]))
@@ -266,34 +290,34 @@ def screen_handler():
                 object_indexes.clear()
                 scrolling_text.clear()
             elif command_info["request"] == "background":
-                time = command_info["time_of_day"]
+                day_phase = command_info["time_of_day"]
 
         for item in screen_objects:
             if item["type"] == "text_label":
-                property = item["properties"]
-                text_label(property["text"], property["alignment"], property["position"], property["size"])
+                if item.scrolling_index != -1:
+                    item.scroll_text()
+                
+                for text_box in item.text_boxes:
+                    tft.blit(text_box, item.text_boxes[text_box])
+                #text_label(property["text"], property["alignment"], property["position"], property["size"], day_phase)
             elif item["type"] == "button" or item["type"] == "label":
-                property = item["properties"]
-                label(property["image"], property["rect"], property["alignment"], property["fill"], property["outline"])
+                if item.fill:
+                    tft.fill(item.fill, pygame.Rect(item.rect))
+                if item.image:
+                    tft.blit(item.image, item.rectangle)
+                #label(property["image"], property["rect"], property["alignment"], property["fill"], property["outline"])
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x_value, y_value = pygame.mouse.get_pos()
-
-                button_found = button_collsion(x_value, y_value)
-
-                notify.put([x_value, y_value, button_found])
-                
-                # Give time for the Raspberry Pi to respond to the press
-                sleep(1)
+                notify_touch_sys.put("pygame_click", x_value, y_value)
 
         clock.tick(24)
         pygame.display.flip()
         tft.fill(WHITE)
 
-@staticmethod
 def format_text(id, text, alignment, position, size):
     return {
         "id": id,
@@ -306,7 +330,6 @@ def format_text(id, text, alignment, position, size):
         }
     }
 
-@staticmethod
 def format_label(id, rect, alignment, image=None, fill=None, outline=None, button=False):
     inital_element = {
         "id": id,
@@ -325,7 +348,6 @@ def format_label(id, rect, alignment, image=None, fill=None, outline=None, butto
 
     return inital_element
 
-@staticmethod
 def create_element(queue, *elements, button_reg=None):
     for element in elements:
         queue.put({"request": "create", "element": element})
@@ -336,19 +358,15 @@ def create_element(queue, *elements, button_reg=None):
 
             button_reg.put((element["id"], element["properties"]["rect"], element["properties"]["alignment"]))
 
-@staticmethod
 def update_element(queue, id, aspect, data):
     queue.put({"request": "update", "id": id, "aspect": aspect, "data": data})
 
-@staticmethod
 def remove_element(queue, id):
     queue.put({"request": "remove", "id": id})
 
-@staticmethod
 def clear_screen(screen, button):
     screen.put({"request": "clear"})
     button.put("clear")
-        
-@staticmethod
+
 def background(queue, time_of_day):
     queue.put({"request": "background", "time_of_day": time_of_day})

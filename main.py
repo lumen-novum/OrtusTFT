@@ -25,6 +25,8 @@ else:
     configure.verify_integrity()
 
 if __name__ == "__main__":
+    adafruit_tft = interface.setup(demo)
+    
     weather_input = multiprocessing.Queue()
     weather_output = multiprocessing.Queue()
 
@@ -32,14 +34,12 @@ if __name__ == "__main__":
     button_queue = multiprocessing.Queue() # Allows buttons to be created within the touch handler system
     display_command = multiprocessing.Queue() # Manages pygame and TFT
 
-    if not demo:
-        touch_process = multiprocessing.Process(target=interface.touch_handler, args=(touch_queue))
-        touch_process.start()
-
+    touch_process = multiprocessing.Process(target=interface.touch_handler, args=(button_queue, touch_queue, demo))
     screen_process = multiprocessing.Process(target=interface.screen_handler, args=(display_command, button_queue, touch_queue, demo))
     weather_process = multiprocessing.Process(target=weather.weather_handler, args=(weather_input, weather_output))
 
     screen_process.start()
+    touch_process.start()
     weather_process.start()
 
     current_screen = "Home"
