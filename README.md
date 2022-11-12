@@ -10,7 +10,7 @@ This project was a lot of fun and I learned a lot from it, however my motivation
 
 I might return one day, though I don't know if it will be anytime soon.
 
-Feel free to contribute to the project if you'd like; I'll still be active on Github so I'll respond to you as quickly as I can.
+Feel free to contribute to the project if you want to; I'll still be active on Github so I'll respond to you as quickly as I can.
 
 ## Features
 * Home screen with temperature, time, and a preview icon of the current weather
