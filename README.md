@@ -1,6 +1,17 @@
 # OrtusTFT
 A simple, digital, forecast that uses the Adafruit 320x240 TFT hat for the Raspberry Pi.
 
+## !!! NOTICE !!!
+Unfortunately, this project isn't being maintained right now.
+
+Even though I wanted to abandon the project entirely, I decided to at least release version 0.2 before I move onto other things.
+
+This project was a lot of fun and I learned a lot from it, however my motivation to continue has been lost.
+
+I might return one day, though I don't know if it will be anytime soon.
+
+Feel free to contribute to the project if you'd like; I'll still be active on Github so I'll respond to you as quickly as I can.
+
 ## Features
 * Home screen with temperature, time, and a preview icon of the current weather
 * Statistic screen with a more in depth view of the weather such as:
