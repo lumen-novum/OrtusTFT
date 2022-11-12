@@ -174,7 +174,7 @@ Is there anything else I should know about?
 I appreciate any and all contributions. :)
 
 ## Credits
-Suggestion of a simulator: [KylesDev](https://github.com/kylesdev91)
+Suggestion of a demo: [KylesDev](https://github.com/kylesdev91)
 
 Weather code icons: [Tomorrow.io](https://github.com/Tomorrow-IO-API/tomorrow-weather-codes)
 
