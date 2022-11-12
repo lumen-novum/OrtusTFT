@@ -15,7 +15,7 @@ def init(display_q, touch_q, button_q, weather_q, d):
     demo = d
 
     if demo:
-        NAME = "Test User"
+        NAME = "lumen-novum"
     else:
         NAME = weather.read_local_data("name")
 
@@ -38,6 +38,7 @@ def background_process(current_screen, btn_keys, **kwargs):
                     terminate()
         else:
             if sleepiness >= 600:
+                clean_up()
                 return "Off {}".format(current_screen)
             else:
                 sleepiness += 1
@@ -57,7 +58,7 @@ def background_process(current_screen, btn_keys, **kwargs):
             interface.background(display_command, day_phase)
         
         if current_screen == "Home":
-            interface.update_element(display_command, "time_temp_label", "text", "{} F°   {}".format(current_temperature, weather.current_time()))
+            interface.update_element(display_command, "time_temp_label", "text", "{} F°   {}".format(kwargs["current_temperature"], weather.current_time()))
         sleep(0.1)
 
 def clean_up():
@@ -73,6 +74,7 @@ def home_formatting(day_phase):
 def home():
     weather_info = weather.request_weather_info(weather_queues, "home")
     day_phase = weather.get_day_phase(weather.request_weather_info(weather_queues, "day_phase"))
+    interface.background(display_command, day_phase)
     local = home_formatting(day_phase)
 
     welcome_label = interface.format_text("welcome_label", local[0], "midtop", (120,10), "header")
@@ -94,7 +96,7 @@ def home():
         "gallery_button": "Photos",
         "about_button": "About"
     }
-    return background_process("Home", btn_keys, {"current_temperature": current_temperature})
+    return background_process("Home", btn_keys, current_temperature=current_temperature)
 
 def weather_report(page):
     if page == 1:
@@ -180,18 +182,19 @@ def about():
     qr_code = interface.format_label("qr_code", ((120, 140), (100, 100)), "midtop", image="qr.png")
     side_note = interface.format_text("side_note", "(Github page)", "midtop", (120,240), "paragraph")
 
-    version = interface.format_text("version", "V0.1.0", "midtop", (120,290), "paragraph")
+    version = interface.format_text("version", "V0.2.0", "midtop", (120,290), "paragraph")
     
     interface.create_element(display_command, title, author, name, qr_code, side_note, version)
 
     day_phase = weather.get_day_phase(weather.request_weather_info(weather_queues, "day_phase"))
     interface.background(display_command, day_phase)
 
-def sleep_screen():
+def sleep_screen(last_screen):
     interface.create_element(display_command, interface.format_label("power", ((0, 0), (240, 320)), "topleft", fill=interface.BLACK, button=True), button_reg=button_queue)
     if not demo:
         with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
             backlight.write("0")
+    return background_process("sleep_screen", {"power": last_screen})
 
 def wip():
     def cone_row(height):

@@ -89,12 +89,12 @@ def touch_handler(newbutton, send_press, demo):
             elif new[2] == "topright":
                 specs = new[1]
                 rect = pygame.Rect((specs[0][0]-specs[1][0], specs[0][1]), specs[1])
-            elif new[0] == "pygame_press":
+            elif new[0] == "pygame_click":
                 x_value = new[1]
                 y_value = new[2]
                 is_pressed = True
             else:
-                rect = pygame.Rect(new[1])
+                rect = pygame.Rect(new[1]) 
 
             buttons[new[0]] = rect
 
@@ -159,11 +159,13 @@ def display_background(day_phase):
     return background
 
 class TextLabel:
-    def __init__(self, text, alignment, position, font, day_phase):
-        self.text = text
-        self.alignment = alignment
-        self.position = position
-        self.font = font
+    def __init__(self, day_phase, text_properties):
+        self.type = "text_label"
+        self.text = text_properties["text"]
+        self.alignment = text_properties["alignment"]
+        self.position = text_properties["position"]
+        self.og_position = text_properties["position"]
+        self.font = text_properties["size"]
         self.day_phase = day_phase
 
         self.scrolling_index = -1
@@ -195,13 +197,48 @@ class TextLabel:
                 terminate()
 
             if self.alignment == "topleft":
-                text_position = text_box.get_rect(topleft= position)
+                text_position = text_box.get_rect(topleft= self.position)
             elif self.alignment == "midtop":
-                text_position = text_box.get_rect(midtop= position)
+                text_position = text_box.get_rect(midtop= self.position)
             #tft.blit(text_box, text_position)
             self.text_boxes[text_box] = text_position
-            position = list(position)
-            position[1] += pygame.font.Font.size(pyg_font, line)[1]
+            self.position = list(self.position)
+            self.position[1] += pygame.font.Font.size(pyg_font, line)[1]
+    
+    def redraw(self):
+        self.position = self.og_position
+        self.text_boxes.clear()
+        for line in self.text.splitlines():
+            if len(line) > 20 and self.font == "paragraph":
+                self.scrolling_index = 20
+                line = line[0:20]
+
+            if self.day_phase == "night":
+                color = WHITE
+            else:
+                color = BLACK
+
+            if self.font == "header":
+                pyg_font = HEADER_FONT
+                text_box = HEADER_FONT.render(line, True, color)
+            elif self.font == "subheader":
+                pyg_font = SUBHEADER_FONT
+                text_box = SUBHEADER_FONT.render(line, True, color)
+            elif self.font == "paragraph":
+                pyg_font = PARAGRAPH_FONT
+                text_box = PARAGRAPH_FONT.render(line, True, color)
+            else:
+                logging.critical("Invaild font type: {}".format(self.font))
+                terminate()
+
+            if self.alignment == "topleft":
+                text_position = text_box.get_rect(topleft= self.position)
+            elif self.alignment == "midtop":
+                text_position = text_box.get_rect(midtop= self.position)
+            #tft.blit(text_box, text_position)
+            self.text_boxes[text_box] = text_position
+            self.position = list(self.position)
+            self.position[1] += pygame.font.Font.size(pyg_font, line)[1]
 
     def wait(self, time):
         if self.scrolling_waiting < time:
@@ -239,14 +276,16 @@ class TextLabel:
                 line = self.start(line)
 
 class Label:
-    def __init__(self, image, rect, alignment, fill, outline):
-        self.rect = rect
-        self.alignment = alignment
-        self.fill = fill
-        self.outline = outline
+    def __init__(self, image, other_properties):
+        self.image = image
+        self.type = "label"
+        self.rect = other_properties["rect"]
+        self.alignment = other_properties["alignment"]
+        self.fill = other_properties["fill"]
+        self.outline = other_properties["outline"]
 
         if image:
-            self.image = pygame.transform.scale(image, rect[1])
+            self.image = pygame.transform.scale(image, self.rect[1])
             if self.alignment == "topleft":
                 self.rectangle = self.image.get_rect(topleft= self.rect[0])
             elif self.alignment == "midtop":
@@ -301,9 +340,14 @@ def screen_handler(display_queue, notify_touch_sys, demo):
                         image_list[properties["image"]] = (pygame.image.load("{}/assets/images/".format(RELATIVE_PATH) + properties["image"]).convert_alpha())
 
                     if command_info["element"]["type"] == "text_label":
-                        screen_objects.append(TextLabel(command_info["element"]))
-                    elif command_info["element"]["type"] == "label":
-                        screen_objects.append(Label(image_list[properties["image"]]))
+                        screen_objects.append(TextLabel(day_phase, command_info["element"]["properties"]))
+                    elif command_info["element"]["type"] == "label" or command_info["element"]["type"] == "button":
+                        new_image = None
+                        if properties["image"] != None:
+                            new_image = image_list[properties["image"]]
+                        screen_objects.append(Label(new_image, properties))
+                    else:
+                        logging.warning("Recieved element type of {}. Skipping element.".format(command_info["element"]["type"]))
 
                     object_indexes.append(command_info["element"]["id"])
                 else:
@@ -314,7 +358,9 @@ def screen_handler(display_queue, notify_touch_sys, demo):
                     image_list[command_info["data"]] = (pygame.image.load("{}/assets/images/".format(RELATIVE_PATH) + command_info["data"]).convert_alpha())
 
                 element_index = object_indexes.index(command_info["id"])
-                screen_objects[element_index]["properties"][command_info["aspect"]] = command_info["data"]
+                if command_info["aspect"] == "text":
+                    screen_objects[element_index].text = command_info["data"]
+                    screen_objects[element_index].redraw()
             elif command_info["request"] == "remove":
                 element_index = object_indexes.index(command_info["id"])
                 screen_objects.pop(element_index)
@@ -327,14 +373,14 @@ def screen_handler(display_queue, notify_touch_sys, demo):
                 day_phase = command_info["time_of_day"]
 
         for item in screen_objects:
-            if item["type"] == "text_label":
+            if item.type == "text_label":
                 if item.scrolling_index != -1:
                     item.scroll_text()
                 
                 for text_box in item.text_boxes:
                     tft.blit(text_box, item.text_boxes[text_box])
                 #text_label(property["text"], property["alignment"], property["position"], property["size"], day_phase)
-            elif item["type"] == "button" or item["type"] == "label":
+            elif item.type == "label":
                 if item.fill:
                     tft.fill(item.fill, pygame.Rect(item.rect))
                 if item.image:
@@ -346,7 +392,7 @@ def screen_handler(display_queue, notify_touch_sys, demo):
                 pygame.quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x_value, y_value = pygame.mouse.get_pos()
-                notify_touch_sys.put("pygame_click", x_value, y_value)
+                notify_touch_sys.put(["pygame_click", x_value, y_value])
 
         clock.tick(24)
         pygame.display.flip()

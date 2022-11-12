@@ -38,6 +38,8 @@ if __name__ == "__main__":
     screen_process = multiprocessing.Process(target=interface.screen_handler, args=(display_command, button_queue, demo))
     weather_process = multiprocessing.Process(target=weather.weather_handler, args=(weather_input, weather_output))
 
+    logging.warn("test")
+
     screens.init(display_command, touch_queue, button_queue, (weather_input, weather_output), demo)
 
     screen_process.start()

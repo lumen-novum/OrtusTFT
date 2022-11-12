@@ -22,6 +22,9 @@ def save_data(hour, day):
         json_object = json.dumps(newdict, indent=4)
         weather_json.write(json_object)
 
+def current_time():
+    return (datetime.now()).strftime("%R")
+
 def get_weather():
     DAILY_FIELDS = ["weatherCodeDay", "weatherCodeNight", "sunriseTime", "sunsetTime", "moonPhase"]
     URL = "https://api.tomorrow.io/v4/timelines"
@@ -106,14 +109,17 @@ def weather_handler(input_queue, output_queue):
         else:
             request_debounce = False
 
-        while not output_queue.empty():
-            data_pattern = output_queue.get()
+        isOutputEmpty = output_queue.empty()
+        isInputEmpty = input_queue.empty()
+
+        while not input_queue.empty():
+            data_pattern = input_queue.get()
             filtered_data = {}
 
             if data_pattern == "day_phase":
                 filtered_data["sunrise"] = weather_info[1][0]["values"]["sunriseTime"]
                 filtered_data["sunset"] = weather_info[1][0]["values"]["sunsetTime"]
-            elif data_pattern == "Home":
+            elif data_pattern == "home":
                 filtered_data["temperature"] = int(weather_info[0][0]["values"]["temperature"]) # Int conversion isn't required, but it just rounds it down.
                 filtered_data["weatherCodeDay"] = weather_info[1][0]["values"]["weatherCodeDay"]
                 filtered_data["weatherCodeNight"] = weather_info[1][0]["values"]["weatherCodeNight"]
@@ -136,10 +142,11 @@ def weather_handler(input_queue, output_queue):
                 filtered_data["ice"] = weather_info[0][0]["values"]["iceAccumulation"]
                 filtered_data["snow"] = weather_info[0][0]["values"]["snowAccumulation"]
 
-            input_queue.put(filtered_data)
+            output_queue.put(filtered_data)
         sleep(0.1)
 
 def get_day_phase(times):
+    # TODO: Fix issue with times not showing at every hour
     # Get the current time and when sunrise and sunset starts.
     convert = lambda time: ((datetime.strptime(time, "%Y-%m-%dT%X%z")).timestamp() - 18000) % 86400
     current_time = ((datetime.now()).timestamp() - 18000) % 86400
