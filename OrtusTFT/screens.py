@@ -33,7 +33,7 @@ def background_process(current_screen, btn_keys, **kwargs):
                 if btn_keys.get(touch_info[2]):
                     while not touch_queue.empty():
                         touch_queue.get()
-                        
+
                     return btn_keys.get(touch_info[2])
                 else:
                     logging.critical("Button '{}' is not bound to a screen.".format(touch_info[2]))
@@ -176,6 +176,10 @@ def weather_report(page):
                                     weather_day_icon, weather_day_label, weather_night_icon,
                                     weather_day_desc, weather_night_label, weather_night_desc,
                                     ice_snow_icon, ice_label, snow_label)
+        btn_keys = {
+            "back_button": "Stats"
+        }
+        return background_process("Stats 2", btn_keys)
     else:
         logging.critical("An unknown page number was requested.")
         terminate()
@@ -197,6 +201,11 @@ def about():
 
     day_phase = weather.get_day_phase(weather.request_weather_info(weather_queues, "day_phase"))
     interface.background(display_command, day_phase)
+
+    btn_keys = {
+        "back_button": "Home"
+    }
+    return background_process("About", btn_keys)
 
 def sleep_screen(last_screen):
     interface.create_element(display_command, interface.format_label("power", ((0, 0), (240, 320)), "topleft", fill=interface.BLACK, button=True), button_reg=button_queue)
@@ -225,3 +234,7 @@ def wip():
 
     cone_row(48)        
     cone_row(222)
+    btn_keys = {
+        "back_button": "Home"
+    }
+    return background_process("WIP", btn_keys)

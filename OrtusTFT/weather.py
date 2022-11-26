@@ -135,7 +135,7 @@ def weather_handler(input_queue, output_queue):
                 filtered_data["night_weather"] = weather_info[1][0]["values"]["weatherCodeNight"]
 
                 convert = lambda time: datetime.fromtimestamp(((datetime.strptime(time, "%Y-%m-%dT%X%z")).timestamp() + 3600) % 86400)
-                sunrise, sunset = convert(weather_info[1][0]["values"]["sunriseTime"]).strftime("%-I:%M AM"), convert(weather_info[1][0]["values"]["sunsetTime"]).strftime("%-I:%M PM")
+                sunrise, sunset = convert(weather_info[1][0]["values"]["sunriseTime"]).strftime("%R"), convert(weather_info[1][0]["values"]["sunsetTime"]).strftime("%R")
                 filtered_data["sunrise"] = sunrise
                 filtered_data["sunset"] = sunset
 
