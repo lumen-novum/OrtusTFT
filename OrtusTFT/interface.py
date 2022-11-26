@@ -320,7 +320,13 @@ def screen_handler(display_queue, notify_touch_sys, demo):
 
     pygame.init()
     pygame.mouse.set_visible(demo)
+
+    if demo:
+        pygame.display.set_icon(pygame.image.load("{}/assets/images/weather_icons/10001.png".format(RELATIVE_PATH)))
+        pygame.display.set_caption("OrtusTFT")
+
     tft = pygame.display.set_mode(SCREEN_SIZE)
+    
     tft.fill(WHITE)
     pygame.display.flip()
 
@@ -390,7 +396,7 @@ def screen_handler(display_queue, notify_touch_sys, demo):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONUP:
                 x_value, y_value = pygame.mouse.get_pos()
                 notify_touch_sys.put(["pygame_click", x_value, y_value])
 

@@ -22,16 +22,18 @@ def init(display_q, touch_q, button_q, weather_q, d):
 def background_process(current_screen, btn_keys, **kwargs):
     sleepiness = 0
 
-    if current_screen == "Home":
-        pass
-
     while True:
         if not touch_queue.empty():
             touch_info = touch_queue.get()
 
             if touch_info[2]:
                 clean_up()
+                print(touch_info[2])
+                print(btn_keys)
                 if btn_keys.get(touch_info[2]):
+                    while not touch_queue.empty():
+                        touch_queue.get()
+                        
                     return btn_keys.get(touch_info[2])
                 else:
                     logging.critical("Button '{}' is not bound to a screen.".format(touch_info[2]))
@@ -51,6 +53,7 @@ def background_process(current_screen, btn_keys, **kwargs):
                 interface.background(display_command, day_phase)
                 local = home_formatting(day_phase)
 
+                
                 interface.update_element(display_command, "welcome_label", "text", local[0])
                 interface.update_element(display_command, "weather_button", "image", "weather_icons/{}.png".format(new_data[local[1]]))
                 current_temperature = new_data["temperature"]
@@ -135,6 +138,12 @@ def weather_report(page):
 
         day_phase = weather.get_day_phase(weather.request_weather_info(weather_queues, "day_phase"))
         interface.background(display_command, day_phase)
+
+        btn_keys = {
+            "back_button": "Home",
+            "next_page": "Stats 2",
+        }
+        return background_process("Stats", btn_keys)
 
     elif page == 2:
         weather_info = weather.request_weather_info(weather_queues, "stats 2")

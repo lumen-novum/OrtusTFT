@@ -104,7 +104,7 @@ def weather_handler(input_queue, output_queue):
         if current_time.minute == 0:
             if not request_debounce:
                 weather_info = get_weather()
-                input_queue.put("refresh_current_data")
+                output_queue.put("refresh_current_data")
                 request_debounce = True
         else:
             request_debounce = False
@@ -123,14 +123,14 @@ def weather_handler(input_queue, output_queue):
                 filtered_data["temperature"] = int(weather_info[0][0]["values"]["temperature"]) # Int conversion isn't required, but it just rounds it down.
                 filtered_data["weatherCodeDay"] = weather_info[1][0]["values"]["weatherCodeDay"]
                 filtered_data["weatherCodeNight"] = weather_info[1][0]["values"]["weatherCodeNight"]
-            elif data_pattern == "Stats":
+            elif data_pattern == "stats":
                 hour_fields = ("temperature", "windSpeed", "visibility", "humidity", "cloudCover")
 
                 for field in hour_fields:
                     filtered_data[field] = int(weather_info[0][0]["values"][field])
 
                 filtered_data["moonPhase"] = get_moon_phase(str(weather_info[1][0]["values"]["moonPhase"]))
-            elif data_pattern == "Stats 2":
+            elif data_pattern == "stats 2":
                 filtered_data["day_weather"] = weather_info[1][0]["values"]["weatherCodeDay"]
                 filtered_data["night_weather"] = weather_info[1][0]["values"]["weatherCodeNight"]
 
@@ -141,6 +141,9 @@ def weather_handler(input_queue, output_queue):
 
                 filtered_data["ice"] = weather_info[0][0]["values"]["iceAccumulation"]
                 filtered_data["snow"] = weather_info[0][0]["values"]["snowAccumulation"]
+            else:
+                logging.critical("An invaild weather request was made. '{}' does not exist.".format(data_pattern))
+                terminate()
 
             output_queue.put(filtered_data)
         sleep(0.1)
@@ -150,6 +153,7 @@ def get_day_phase(times):
     # Get the current time and when sunrise and sunset starts.
     convert = lambda time: ((datetime.strptime(time, "%Y-%m-%dT%X%z")).timestamp() - 18000) % 86400
     current_time = ((datetime.now()).timestamp() - 18000) % 86400
+    print(times)
     sunrise_time = convert(times["sunrise"])
     sunset_time = convert(times["sunset"])
 
