@@ -86,7 +86,7 @@ def home():
 
     weather_button = interface.format_label("weather_button", ((20, 90), interface.WEATHER_ICON), "topleft", image="weather_icons/{}.png".format(weather_info[local[1]]), button=True)
     calendar_button = interface.format_label("calendar_button", ((220, 90), interface.WEATHER_ICON), "topright", image="calendar.png", button=True)
-    gallery_button = interface.format_label("gallery_button", ((20, 182), interface.WEATHER_ICON), "topleft", image="blank.png", button=True)
+    gallery_button = interface.format_label("gallery_button", ((20, 182), interface.WEATHER_ICON), "topleft", image="cone.png", button=True)
     about_button = interface.format_label("about_button", ((220, 182), interface.WEATHER_ICON), "topright", image="notepad.png", button=True)
 
     interface.create_element(display_command, welcome_label, name_label, time_temp_label, weather_button, calendar_button, gallery_button, about_button, button_reg=button_queue)
@@ -140,7 +140,7 @@ def weather_report(page):
         interface.background(display_command, day_phase)
 
         btn_keys = {
-            "back_button": "Home",
+            "back_button_1": "Home",
             "next_page": "Stats 2",
         }
         return background_process("Stats", btn_keys)
@@ -177,7 +177,7 @@ def weather_report(page):
                                     weather_day_desc, weather_night_label, weather_night_desc,
                                     ice_snow_icon, ice_label, snow_label)
         btn_keys = {
-            "back_button": "Stats"
+            "back_button_2": "Stats"
         }
         return background_process("Stats 2", btn_keys)
     else:

@@ -125,6 +125,7 @@ def touch_handler(newbutton, send_press, demo):
         # collides with where the screen was pressed
         
         if is_pressed:
+            logging.warning("button pressed??")
             button_found = button_collsion(x_value, y_value)
 
             send_press.put([x_value, y_value, button_found])
@@ -137,6 +138,7 @@ def touch_handler(newbutton, send_press, demo):
                 # Clear unnecessary "pressure" events
                 for _ in touchscreen.read():
                     pass
+            is_pressed = False
 
             
                 
@@ -322,7 +324,6 @@ def screen_handler(display_queue, notify_touch_sys, demo):
     pygame.mouse.set_visible(demo)
 
     if demo:
-        pygame.display.set_icon(pygame.image.load("{}/assets/images/weather_icons/10001.png".format(RELATIVE_PATH)))
         pygame.display.set_caption("OrtusTFT")
 
     tft = pygame.display.set_mode(SCREEN_SIZE)
@@ -397,6 +398,7 @@ def screen_handler(display_queue, notify_touch_sys, demo):
             if event.type == pygame.QUIT:
                 pygame.quit()
             elif event.type == pygame.MOUSEBUTTONUP:
+                logging.warning("button was pressed!")
                 x_value, y_value = pygame.mouse.get_pos()
                 notify_touch_sys.put(["pygame_click", x_value, y_value])
 
