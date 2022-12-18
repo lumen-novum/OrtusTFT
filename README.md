@@ -30,8 +30,11 @@ Feel free to contribute to the project if you want to; I'll still be active on G
 If you would like to try OrtusTFT out before installation and have a computer, you're in luck!
 
 To get started, please install the following on your PC:
-* Pygame 1.9.6 ```pip3 install pygame==1.9.6```
-* Python 3.7.3
+* Python 3.11 (Last known working version was 3.11.1)
+
+And the following pip packages:
+* Pygame (If it fails to install, try adding the `--pre` argument at the end of the install command)
+* Requests
 
 Once you have those installed, head over to the OrtusTFT Github page and download the source code for the latest release onto your computer. (It should be a zip file)
 
@@ -44,12 +47,13 @@ Extract the zip file and run the following command in the root folder of OrtusTF
 Enjoy!
 
 ## Prerequisites
+### TODO: These need to be tested and changed accordingly!!!
 * Raspberry Pi - I'm not 100% sure if anything newer than a 3B will work. If it does/doesn't work, please leave a "documentation" issue to let me know.
 * At the moment, OrtusTFT only supports Adafruit's 320x240 Resistive displays. (Size does not matter) If you try to use anything else, OrtusTFT will not function properly.
 If you would like support for your screen, please create an "enhancement" issue.
-* The following python packages:
+* The following pip packages:
   * Evdev
-  * Pygame 1.9.6 ```sudo pip3 install pygame==1.9.6```
+  * Pygame 1.9.6 (You must get a version before Pygame 2, otherwise it won't properly support SDL1 which is required to control the TFT display) ```sudo pip3 install pygame==1.9.6```
 * [Tomorrow.io](https://app.tomorrow.io/signin) account - Once you have made an account and are logged in, [click here](https://app.tomorrow.io/development/keys) to get your secret key to use for later.
 * Location coordinates - Go to Google Maps and right click on the place you would like to have the weather from and click on the coordinates. Write these down for later.
 
@@ -85,8 +89,12 @@ When using the interactive installation script:
   [If you need any further help, please take a look at this tutorial where I learned how to setup my TFT before creating an issue.](https://learn.adafruit.com/adafruit-pitft-28-inch-resistive-touchscreen-display-raspberry-pi/easy-install-2)
   
 Reboot the Pi when finished.
+
+4. Setup the python environment with these commands:
+```
+```
   
-4. Download OrtusTFT with the following commands:
+5. Download OrtusTFT with the following commands:
 ```
 cd ~
 git clone https://github.com/lumen-novum/OrtusTFT.git
