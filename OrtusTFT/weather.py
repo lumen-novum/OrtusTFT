@@ -1,5 +1,6 @@
 import requests
 import json
+
 from datetime import datetime
 from time import sleep
 from sys import exit as terminate
@@ -153,7 +154,6 @@ def get_day_phase(times):
     # Get the current time and when sunrise and sunset starts.
     convert = lambda time: ((datetime.strptime(time, "%Y-%m-%dT%X%z")).timestamp() - 18000) % 86400
     current_time = ((datetime.now()).timestamp() - 18000) % 86400
-    print(times)
     sunrise_time = convert(times["sunrise"])
     sunset_time = convert(times["sunset"])
 

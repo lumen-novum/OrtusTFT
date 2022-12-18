@@ -1,8 +1,9 @@
 import pygame
 import os
-from time import sleep
-import json
+
 from sys import exit as terminate
+from OrtusTFT import weather
+from time import sleep
 
 # As long as the "configure" module has been imported, we don't have to worry about creating a basic config.
 import logging
@@ -18,38 +19,6 @@ WHITE = (255,255,255)
 BLACK = (0,0,0)    
 WEATHER_ICON = (72, 72)
 MINI_ICON = (32, 32)
-
-def setup(weather_module):
-    global weather
-    weather = weather_module
-
-"""
-def setup(demo, weather_module):
-    if not demo:
-        if os.geteuid() != 0:
-            logging.critical("Display cannot initalize without root access.")
-            terminate()
-
-        os.putenv("SDL_FBDEV", "/dev/fb1")
-
-        with open("/sys/class/backlight/soc:backlight/brightness", "w") as backlight:
-            backlight.write("1")       
-
-    global HEADER_FONT, SUBHEADER_FONT, PARAGRAPH_FONT, weather
-    weather = weather_module
-
-    pygame.init()
-    pygame.mouse.set_visible(demo)
-    tft = pygame.display.set_mode(SCREEN_SIZE)
-    tft.fill(WHITE)
-    pygame.display.flip()
-
-    HEADER_FONT = pygame.font.Font("{}/assets/fonts/bold.ttf".format(RELATIVE_PATH), 30)
-    SUBHEADER_FONT = pygame.font.Font("{}/assets/fonts/main.ttf".format(RELATIVE_PATH), 25)
-    PARAGRAPH_FONT = pygame.font.Font("{}/assets/fonts/light.ttf".format(RELATIVE_PATH), 20)
-
-    return tft
-"""
 
 def touch_handler(newbutton, send_press, demo):
     buttons = {}
@@ -125,7 +94,6 @@ def touch_handler(newbutton, send_press, demo):
         # collides with where the screen was pressed
         
         if is_pressed:
-            logging.warning("button pressed??")
             button_found = button_collsion(x_value, y_value)
 
             send_press.put([x_value, y_value, button_found])
@@ -398,7 +366,6 @@ def screen_handler(display_queue, notify_touch_sys, demo):
             if event.type == pygame.QUIT:
                 pygame.quit()
             elif event.type == pygame.MOUSEBUTTONUP:
-                logging.warning("button was pressed!")
                 x_value, y_value = pygame.mouse.get_pos()
                 notify_touch_sys.put(["pygame_click", x_value, y_value])
 
