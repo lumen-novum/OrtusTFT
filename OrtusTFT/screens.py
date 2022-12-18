@@ -20,7 +20,7 @@ class ScreenCollection:
         if self.demo:
             self.NAME = "lumen-novum"
         else:
-            self.NAME = weather.read_local_data("self.NAME")
+            self.NAME = weather.read_local_data("name")
 
     def background_process(self, current_screen, btn_keys, **kwargs):
         sleepiness = 0
